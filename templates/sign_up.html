@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="sign-up-container">
+  <form method="post" class="sign-up-form">
+    <h2>Sign Up</h2>
+    <div class="form-group">
+      <input
+        type="text"
+        placeholder="Choose a username"
+        name="name"
+        value="{{name}}"
+        class="form-input"
+      />
+    </div>
+    <div class="form-group">
+      <input
+        type="password"
+        placeholder="Password"
+        name="password"
+        class="form-input"
+      />
+    </div>
+    <div class="form-group">
+      <input
+        type="password"
+        placeholder="Repeat Password"
+        name="password_repeat"
+        class="form-input"
+      />
+    </div>
+    <button type="submit" class="submit-btn">Sign Up</button>
+    <div class="form-footer">
+      <a href="/sign-in">Already have an account? Log In</a>
+    </div>
+    {% if error %}
+    <div class="error-message">
+      {{ error }}
+    </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

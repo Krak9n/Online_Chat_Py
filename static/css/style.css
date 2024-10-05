@@ -1,0 +1,91 @@
+
+/* Общие стили для страницы */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f3f4f6;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Контейнер для формы */
+.sign-up-container {
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+/* Стили формы */
+.sign-up-form h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Ссылки под формой */
+.form-footer {
+  margin-top: 20px;
+}
+
+.form-footer a {
+  text-decoration: none;
+  color: #007bff;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.form-footer a:hover {
+  color: #0056b3;
+}
+
+/* Сообщение об ошибке */
+.error-message {
+  margin-top: 15px;
+  color: #e74c3c;
+} 
+*:focus{
+  outline: none;
+}

@@ -1,0 +1,133 @@
+.content{
+    width: 100%;
+    height: 100%
+}
+
+.text{
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Основной контейнер */
+.message-box {
+    width: 60%; /* Изменено на 80% для большей ширины */
+    height: max-content;
+    margin: 20px auto;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    padding: 20px; /* Увеличены отступы */
+    background-color: #f9f9f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Увеличена тень */
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Заголовок комнаты */
+  .message-box h2 {
+    text-align: center;
+    font-size: 24px; /* Увеличен размер шрифта заголовка */
+    margin-bottom: 20px; /* Увеличен отступ снизу */
+    color: #333;
+  }
+  
+  /* Контейнер для сообщений */
+  .messages {
+    height: 400px; /* Увеличена высота */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px; /* Увеличены отступы */
+    background-color: #fff;
+    overflow-y: auto;
+    margin-bottom: 20px; /* Увеличен отступ снизу */
+  }
+  
+  /* Сообщения */
+  .messages .message {
+    background-color: #e1f7d5; /* Цвет фона для обычных сообщений */
+    border-radius: 12px;
+    padding: 12px; /* Увеличены отступы внутри сообщений */
+    margin: 10px 0; /* Увеличены отступы между сообщениями */
+    word-wrap: break-word;
+    font-size: 16px; /* Увеличен размер шрифта */
+    max-width: 80%; /* Максимальная ширина сообщения */
+    position: relative; /* Для позиционирования элемента Muted */
+  }
+  
+  /* Сообщения от других пользователей */
+  .messages .message.their-message {
+    background-color: #ffdbdb; /* Цвет фона для сообщений от других пользователей */
+    text-align: left;
+  }
+  
+  /* Ввод сообщения и кнопка */
+  .inputs {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px; /* Увеличен промежуток между элементами */
+  }
+  
+  .inputs input[type="text"] {
+    flex: 1;
+    padding: 12px; /* Увеличены отступы внутри поля ввода */
+    border: 1px solid #ccc;
+    border-radius: 8px; /* Закругленные углы */
+    font-size: 16px; /* Увеличен размер шрифта для поля ввода */
+  }
+  
+  .inputs button {
+    padding: 12px 16px; /* Увеличены отступы внутри кнопки */
+    background-color: #4CAF50; /* Цвет фона кнопки */
+    color: white; /* Цвет текста кнопки */
+    border: none; /* Убираем границу */
+    border-radius: 8px; /* Закругленные углы */
+    cursor: pointer; /* Указатель при наведении */
+    font-size: 16px; /* Увеличен размер шрифта для кнопки */
+    transition: background-color 0.3s ease; /* Плавный переход цвета */
+  }
+  
+  .inputs button:hover {
+    background-color: #45a049; /* Цвет кнопки при наведении */
+  }
+  
+  /* Автоматический скроллинг вниз */
+  .messages {
+    scroll-behavior: smooth; /* Плавный скроллинг */
+  }
+  
+  /* Класс для сообщений, которые замучены (Muted) */
+  .messages .muted {
+    color: #999; /* Цвет текста */
+    opacity: 0.6; /* Полупрозрачный эффект */
+    font-style: italic; /* Курсив для выделения */
+  }
+  body{
+    background-image: url("https://th.bing.com/th/id/OIP.Kev1wv5JVtC0AZ7bLJvbKgHaEK?w=243&h=180&c=7&r=0&o=5&dpr=1.1&pid=1.7");
+  }
+  #file-input + label {
+    display: inline-block;
+    padding: 10px 15px;
+    background-color: #f44336;
+    color: #ffffff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+  }
+  @media screen and (max-width: 600px) {
+    .message-box {
+        width: 95%; /* Ширина контейнера на мобильных устройствах */
+        height: 100%;
+    }
+
+    .messages {
+        height: 300px; /* Высота сообщений на мобильных */
+    }
+
+    .inputs {
+        flex-direction: column; /* Элементы в колонку для мобильного */
+    }
+
+    .inputs input[type="text"], .inputs button {
+        font-size: 14px; /* Уменьшен размер шрифта для мобильных */
+    }
+}

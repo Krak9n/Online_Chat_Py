@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/room.css') }}">
+{% endblock %}
+{% block content %}
+<style>
+  @media screen and (max-width: 600px) {
+    .message-box {
+        width: 100%;
+        height: 100%;
+    }
+
+    .messages {
+        height: 300px;
+    }
+
+    .inputs {
+        flex-direction: column;
+    }
+
+    .inputs input[type="text"], .inputs button {
+        font-size: 14px;
+    }
+  }
+</style>
+
+<div class="message-box">
+  <h2>Chat Room: {{ code }}</h2>
+  <div class="messages" id="messages"></div>
+  <div class="inputs">
+    <input type="text" rows="3" placeholder="Message" name="message" id="message" />
+    <button type="button" name="send" id="send-btn" onClick="sendMessage()">Send</button>
+    
+    <!-- Кнопка для выбора файла -->
+    <button class="flex items-center justify-center h-8 w-8 rounded-full text-token-text-primary dark:text-white focus-visible:outline-black dark:focus-visible:outline-white mb-1" aria-disabled="false" aria-label="Прикрепить файлы" onClick="document.getElementById('file-input').click()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z" fill="currentColor"></path>
+      </svg>
+    </button>
+
+    <button type="button" name="send-file" id="send-file-btn" onClick="sendFile()">Send File</button>
+  </div>
+</div>
+
+<!-- Скрытое поле для выбора файлов -->
+<input type="file" id="file-input" style="display: none;" />
+
+<script type="text/javascript">
+  var socketio = io();  // Инициализация сокетов
+
+  const messages = document.getElementById("messages");
+
+  // Функция для создания сообщений
+  const createMessage = (name, msg, timestamp) => {
+    const content = `
+      <div class="text">
+        <span>
+          <strong>${name}</strong>: ${msg}
+        </span>
+        <span class="muted" style="margin-left: 10px;">
+          ${timestamp}
+        </span>
+      </div>
+    `;
+    messages.innerHTML += content;
+  };
+
+  // Получение сообщения от сервера через сокет
+  // Получаем сообщение с файлами от сервера
+socketio.on('message', (data) => {
+  if (data.file) {
+    const fileName = data.file.name;  // Имя файла
+    const fileData = data.file.data;  // Данные файла в формате base64
+    const downloadLink = `<a href="${fileData}" download="${fileName}">${fileName}</a>`;  // Ссылка для скачивания файла
+
+    // Отображаем сообщение о получении файла
+    createMessage(data.name, `Sent file: ${downloadLink}`, data.timestamp);
+  } else {
+    // Если это обычное сообщение
+    createMessage(data.name, data.message, data.timestamp);
+  }
+});
+
+  // Отправка текстового сообщения
+  const sendMessage = () => {
+    const message = document.getElementById("message");
+    if (message.value == "") return;
+    socketio.emit("message", { data: message.value });
+    message.value = "";
+  };
+
+  // Отправка файла
+  // Отправка файла
+  const sendFile = () => {
+    const fileInput = document.getElementById("file-input");
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const fileData = event.target.result;  // Прочитанные данные файла (base64)
+        const fileName = file.name;  // Имя файла
+
+        // Отправляем файл на сервер через socketio.emit("file", ...)
+        socketio.emit('file', { 
+            name: fileName, 
+            data: fileData 
+        });
+    };
+    reader.readAsDataURL(file);  // Чтение файла в формате base64
+};
+
+// Получаем сообщение с файлами от сервера
+socketio.on('file', (data) => {
+  console.log("Ok")
+    const username = "{{ session['chatname'] }}";  // Имя пользователя
+    const timestamp = data.timestamp;  // Время отправки с сервера
+    const fileName = data.name;  // Имя файла
+
+    // Отображаем сообщение о получении файла
+    createMessage(username, fileName, timestamp);
+});
+</script>
+{% for msg in messages %}
+<script type="text/javascript">
+  createMessage("{{ msg.name }}", "{{ msg.message }}", "{{ msg.timestamp }}");
+</script>
+{% endfor %}
+{% endblock %}
