@@ -55,7 +55,7 @@ def checkup():
 
 @app.route("/find-chat", methods=["POST", "GET"])
 def home():
-    if session.get("name")==0:
+    if not session.get("name"):
         return redirect("/sign-up")
     if request.method == "POST":
         name = session["name"]
@@ -188,6 +188,26 @@ def handle_file(data):
     rooms[room]["messages"].append(data_content)  # Сохраняем в историю сообщений
     print(f"File '{file_name}' sent to room {room} at {timestamp}")
 
+@socketio.on("audioSMS")
+def audioSMS(data):
+    room = session.get("room")  # Получаем текущую комнату из сессии
+    if room not in rooms:
+        return
+    # Получаем данные аудио
+    file_data = data["data"]  # Измените 'data' на 'file' если это ваше намерение
+    # Назначаем текущее время отправки
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Формируем данные для отправки обратно на клиента
+    data_content = {
+        "name": session.get('chatname'),
+        "data": file_data,
+        "timestamp": timestamp,
+        "ending": "audio"
+    }
+    # Отправляем файл и время обратно клиенту
+    send(data_content, to=room)
+    rooms[room]["messages"].append(data_content)  # Сохраняем в историю сообщений
+    print(f"Audio message sent to room {room} at {timestamp}")
 
 #При функции io() на стороне клиента room.html отрабатывает connect на сервере
 @socketio.on("connect")

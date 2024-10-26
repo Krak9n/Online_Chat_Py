@@ -22,6 +22,14 @@
         font-size: 14px;
     }
   }
+  #startButton, #stopButton{
+            background-color: #4CAF50;
+            border-color: transparent;
+        }
+        #stopButton{
+            visibility: hidden;
+            display: none;
+        }
 </style>
 
 <div class="message-box">
@@ -30,6 +38,19 @@
   <div class="inputs">
     <input type="text" rows="3" placeholder="Message" name="message" id="message" />
     <button type="button" name="send" id="send-btn" onClick="sendMessage()">Send</button>
+    <button id="startButton">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+          <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3z" />
+          <path d="M19 11a1 1 0 0 0-2 0 5 5 0 1 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.93V21h-3a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-3.07A7 7 0 0 0 19 11z" />
+      </svg>
+  </button>
+  <button id="stopButton">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+          <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3z" />
+          <path d="M19 11a1 1 0 0 0-2 0 5 5 0 1 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.93V21h-3a1 1 0 0 0 0 2h8a1 1 0 0 0 0-2h-3v-3.07A7 7 0 0 0 19 11z" />
+          <line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2" />
+      </svg>
+  </button>
     
     <!-- Кнопка для выбора файла -->
     <button class="flex items-center justify-center h-8 w-8 rounded-full text-token-text-primary dark:text-white focus-visible:outline-black dark:focus-visible:outline-white mb-1" aria-disabled="false" aria-label="Прикрепить файлы" onClick="document.getElementById('file-input').click()">
@@ -47,49 +68,89 @@
 
 <script type="text/javascript">
   var socketio = io();  // Инициализация сокетов
-
   const messages = document.getElementById("messages");
 
   // Функция для создания сообщений
-  const createMessage = (name, msg, timestamp) => {
-    const content = `
-      <div class="text">
-        <span>
-          <strong>${name}</strong>: ${msg}
-        </span>
-        <span class="muted" style="margin-left: 10px;">
-          ${timestamp}
-        </span>
-      </div>
-    `;
+  const createMessage = (name, msg, timestamp, ending=null) => {
+    let content;
+    
+    if (msg.data) {
+        const fileName = msg.name;
+        const fileData = msg.data;
+
+        if (/\.(jpg|jpeg|png|gif)$/i.test(fileName)) {
+            // Изображение
+            content = `
+              <div class="text">
+                <span><strong>${name}</strong>:</span>
+                <img src="${fileData}" alt="image" style="max-width: 200px;">
+                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
+              </div>
+            `;
+        } else if (/\.(mp4|webm|ogg)$/i.test(fileName)) {
+            // Видео
+            content = `
+              <div class="text">
+                <span><strong>${name}</strong>:</span>
+                <video src="${fileData}" controls style="max-width: 200px;"></video>
+                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
+              </div>
+            `;
+        } else if (/\.(mp3|wav|ogg|webm|weba)$/i.test(fileName) || ending==="audio") {
+            // Аудио
+            content = `
+              <div class="text">
+                <span><strong>${name}</strong>:</span>
+                <audio src="${fileData}" controls></audio>
+                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
+              </div>
+            `;
+        } else {
+            // Ссылка на файл для скачивания
+            content = `
+              <div class="text">
+                <span><strong>${name}</strong>: <a href="${fileData}" download="${fileName}">${fileName}</a></span>
+                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
+              </div>
+            `;
+        }
+    } else {
+        // Обычное текстовое сообщение
+        content = `
+          <div class="text">
+            <span><strong>${name}</strong>: ${msg}</span>
+            <span class="muted" style="margin-left: 10px;">${timestamp}</span>
+          </div>
+        `;
+    }
+
     messages.innerHTML += content;
-  };
+};
 
-  // Получение сообщения от сервера через сокет
-  // Получаем сообщение с файлами от сервера
-socketio.on('message', (data) => {
-  if (data.file) {
-    const fileName = data.file.name;  // Имя файла
-    const fileData = data.file.data;  // Данные файла в формате base64
-    const downloadLink = `<a href="${fileData}" download="${fileName}">${fileName}</a>`;  // Ссылка для скачивания файла
-
-    // Отображаем сообщение о получении файла
-    createMessage(data.name, `Sent file: ${downloadLink}`, data.timestamp);
-  } else {
-    // Если это обычное сообщение
-    createMessage(data.name, data.message, data.timestamp);
-  }
-});
+  // Обработка сообщений от сервера
+  socketio.on('message', (data) => {
+    if(data.data){
+      const username = "{{ session['chatname'] }}";
+      if(data.ending){
+        createMessage(username, data, data.timestamp, data.ending);
+        return
+      }
+    createMessage(username, data, data.timestamp);
+    }else{
+      createMessage(data.name, data.message, data.timestamp);
+    }
+  });
 
   // Отправка текстового сообщения
   const sendMessage = () => {
-    const message = document.getElementById("message");
-    if (message.value == "") return;
-    socketio.emit("message", { data: message.value });
-    message.value = "";
+    const messageInput = document.getElementById("message");
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    socketio.emit("message", { data: message });
+    messageInput.value = "";  // Очищаем поле ввода
   };
 
-  // Отправка файла
   // Отправка файла
   const sendFile = () => {
     const fileInput = document.getElementById("file-input");
@@ -97,30 +158,83 @@ socketio.on('message', (data) => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(event) {
-        const fileData = event.target.result;  // Прочитанные данные файла (base64)
-        const fileName = file.name;  // Имя файла
-
-        // Отправляем файл на сервер через socketio.emit("file", ...)
-        socketio.emit('file', { 
-            name: fileName, 
-            data: fileData 
-        });
+    reader.onload = (event) => {
+      const fileData = event.target.result;
+      socketio.emit('file', { name: file.name, data: fileData });
     };
-    reader.readAsDataURL(file);  // Чтение файла в формате base64
+    reader.readAsDataURL(file);
+  };
+
+  // Работа с аудио
+  const startButton = document.getElementById("startButton");
+  const stopButton = document.getElementById("stopButton");
+  let mediaRecorder;
+  let audioChunks = [];
+  let stream = null;
+
+  const initStream = async () => {
+    if (!stream) {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    return stream;
+  };
+
+  startButton.onclick = async () => {
+    audioChunks = [];
+    try {
+        await initStream();
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+        mediaRecorder.ondataavailable = (event) => {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                // Отправка аудиофайла на сервер
+                socketio.emit("audioSMS", { name: "Audio Message", data: reader.result });
+            };
+            reader.readAsDataURL(audioBlob);
+        };
+
+        mediaRecorder.start();
+        toggleRecordingButtons(true);
+    } catch (error) {
+        console.error("Error accessing microphone:", error.message);
+    }
 };
 
-// Получаем сообщение с файлами от сервера
-socketio.on('file', (data) => {
-  console.log("Ok")
-    const username = "{{ session['chatname'] }}";  // Имя пользователя
-    const timestamp = data.timestamp;  // Время отправки с сервера
-    const fileName = data.name;  // Имя файла
+  stopButton.onclick = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+    }
+    toggleRecordingButtons(false);
+  };
 
-    // Отображаем сообщение о получении файла
-    createMessage(username, fileName, timestamp);
-});
+  function toggleRecordingButtons (isRecording) {
+    stopButton.style.display = isRecording ? "block" : "none";
+    startButton.style.display = isRecording ? "none" : "block";
+    stopButton.style.visibility = isRecording ? "visible" : "hidden";
+    startButton.style.visibility = isRecording ? "hidden" : "visible";
+  };
+
+  // Освобождение потока при закрытии вкладки
+  window.onunload = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+  };
+
+  // Получение аудио-сообщений от сервера
+  socketio.on("audioSMS", data => {
+    createMessage(data.name, data.file, data.timestamp);
+  });
 </script>
+
 {% for msg in messages %}
 <script type="text/javascript">
   createMessage("{{ msg.name }}", "{{ msg.message }}", "{{ msg.timestamp }}");
