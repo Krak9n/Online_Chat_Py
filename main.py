@@ -96,7 +96,7 @@ def sign_in():
         else:
             found_user = users.query.filter_by(username=username, password=password).first()
             if found_user:
-                session["name"] = found_user.username  # Глобальный пользователь
+                session["name"] = found_user.username
                 return redirect("/")
             else:
                 return render_template("sign_in.html", error="Username or password is incorrect")
@@ -105,6 +105,16 @@ def sign_in():
 
 
 @app.route("/sign-up", methods=["GET", "POST"])
+# def clear_users():
+#     try:
+#         db.session.query(users).delete()
+#         db.session.commit() 
+#         return
+#     except Exception as e:
+#         db.session.rollback()
+#         return
+#     finally:
+#         return redirect("/")
 def sign_up():
     if request.method=="GET":
         if session.get("name"):
@@ -128,18 +138,6 @@ def sign_up():
                 session["name"] = usr.username
                 return redirect("/")
     return render_template("sign_up.html")
-#-----------------------------------------------------------------------------------------------------------------------------------------------------
-# def clear_users():
-#     try:
-#         db.session.query(users).delete()  # Удаление всех записей из таблицы users
-#         db.session.commit() 
-#         return "All users have been deleted successfully."
-#     except Exception as e:
-#         db.session.rollback()  # В случае ошибки откатываем изменения
-#         return f"An error occurred: {str(e)}"
-#     finally:
-#         return redirect("/")
-#-------
 
 @app.route("/database/view")
 def view():
@@ -169,64 +167,55 @@ def message(data):
 
 @socketio.on("file")
 def handle_file(data):
-    room = session.get("room")  # Получаем текущую комнату из сессии
+    room = session.get("room")
     if room not in rooms:
         return
-    # Получаем имя файла и данные файла
     file_name = data["name"]
     file_data = data["data"]
-    # Назначаем текущее время отправки
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # Формируем данные для отправки обратно на клиента
     data_content = {
         "name": file_name,
         "data": file_data,
         "timestamp": timestamp
     }
-    # Отправляем файл и время обратно клиенту
     send(data_content, to=room)
-    rooms[room]["messages"].append(data_content)  # Сохраняем в историю сообщений
+    rooms[room]["messages"].append(data_content)  
     print(f"File '{file_name}' sent to room {room} at {timestamp}")
 
 @socketio.on("audioSMS")
 def audioSMS(data):
-    room = session.get("room")  # Получаем текущую комнату из сессии
+    room = session.get("room")  
     if room not in rooms:
         return
-    # Получаем данные аудио
-    file_data = data["data"]  # Измените 'data' на 'file' если это ваше намерение
-    # Назначаем текущее время отправки
+    file_data = data["data"]  
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # Формируем данные для отправки обратно на клиента
     data_content = {
         "name": session.get('chatname'),
         "data": file_data,
         "timestamp": timestamp,
         "ending": "audio"
     }
-    # Отправляем файл и время обратно клиенту
     send(data_content, to=room)
-    rooms[room]["messages"].append(data_content)  # Сохраняем в историю сообщений
+    rooms[room]["messages"].append(data_content)  
     print(f"Audio message sent to room {room} at {timestamp}")
 
-#При функции io() на стороне клиента room.html отрабатывает connect на сервере
 @socketio.on("connect")
 def connect(auth):
-    room = session.get("room")    # Получаем текущую комнату из сессии
-    name = session.get("chatname")    # Получаем имя пользователя из сессии
-    if not room or not name:      # Если нет комнаты или имени
-        return                    # Прекращаем выполнение функции
+    room = session.get("room")    
+    name = session.get("chatname")    
+    if not room or not name:      
+        return                    
     
-    if room not in rooms:         # Если комнаты с таким названием не существует
-        leave_room(room)          # Оставляем комнату (на всякий случай, если что-то пошло не так)
-        return                    # Прекращаем выполнение функции
+    if room not in rooms:         
+        leave_room(room)          
+        return                    
     
-    join_room(room)               # Присоединяем пользователя к комнате
+    join_room(room)           
     if session["chatname"] not in rooms[room]["members_name"]:
         rooms[room]["members_name"].append(session["chatname"])
-        send({"name": name, "message": "has entered the room", "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, to=room)  # Отправляем сообщение другим участникам комнаты
-    rooms[room]["members"] += 1   # Увеличиваем количество участников комнаты на 1
-    print(f"{name} joined room {room}")  # Выводим в консоль, что пользователь присоединился
+        send({"name": name, "message": "has entered the room", "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, to=room)  
+    rooms[room]["members"] += 1   
+    print(f"{name} joined room {room}")  
 
 
 @socketio.on("disconnect")

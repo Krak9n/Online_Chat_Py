@@ -52,7 +52,6 @@
       </svg>
   </button>
     
-    <!-- Кнопка для выбора файла -->
     <button class="flex items-center justify-center h-8 w-8 rounded-full text-token-text-primary dark:text-white focus-visible:outline-black dark:focus-visible:outline-white mb-1" aria-disabled="false" aria-label="Прикрепить файлы" onClick="document.getElementById('file-input').click()">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" clip-rule="evenodd" d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z" fill="currentColor"></path>
@@ -63,177 +62,11 @@
   </div>
 </div>
 
-<!-- Скрытое поле для выбора файлов -->
 <input type="file" id="file-input" style="display: none;" />
+{% endblock %}
+{% block script %}
 
-<script type="text/javascript">
-  var socketio = io();  // Инициализация сокетов
-  const messages = document.getElementById("messages");
-
-  // Функция для создания сообщений
-  const createMessage = (name, msg, timestamp, ending=null) => {
-    let content;
-    
-    if (msg.data) {
-        const fileName = msg.name;
-        const fileData = msg.data;
-
-        if (/\.(jpg|jpeg|png|gif)$/i.test(fileName)) {
-            // Изображение
-            content = `
-              <div class="text">
-                <span><strong>${name}</strong>:</span>
-                <img src="${fileData}" alt="image" style="max-width: 200px;">
-                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
-              </div>
-            `;
-        } else if (/\.(mp4|webm|ogg)$/i.test(fileName)) {
-            // Видео
-            content = `
-              <div class="text">
-                <span><strong>${name}</strong>:</span>
-                <video src="${fileData}" controls style="max-width: 200px;"></video>
-                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
-              </div>
-            `;
-        } else if (/\.(mp3|wav|ogg|webm|weba)$/i.test(fileName) || ending==="audio") {
-            // Аудио
-            content = `
-              <div class="text">
-                <span><strong>${name}</strong>:</span>
-                <audio src="${fileData}" controls></audio>
-                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
-              </div>
-            `;
-        } else {
-            // Ссылка на файл для скачивания
-            content = `
-              <div class="text">
-                <span><strong>${name}</strong>: <a href="${fileData}" download="${fileName}">${fileName}</a></span>
-                <span class="muted" style="margin-left: 10px;">${timestamp}</span>
-              </div>
-            `;
-        }
-    } else {
-        // Обычное текстовое сообщение
-        content = `
-          <div class="text">
-            <span><strong>${name}</strong>: ${msg}</span>
-            <span class="muted" style="margin-left: 10px;">${timestamp}</span>
-          </div>
-        `;
-    }
-
-    messages.innerHTML += content;
-};
-
-  // Обработка сообщений от сервера
-  socketio.on('message', (data) => {
-    if(data.data){
-      const username = "{{ session['chatname'] }}";
-      if(data.ending){
-        createMessage(username, data, data.timestamp, data.ending);
-        return
-      }
-    createMessage(username, data, data.timestamp);
-    }else{
-      createMessage(data.name, data.message, data.timestamp);
-    }
-  });
-
-  // Отправка текстового сообщения
-  const sendMessage = () => {
-    const messageInput = document.getElementById("message");
-    const message = messageInput.value.trim();
-    if (!message) return;
-
-    socketio.emit("message", { data: message });
-    messageInput.value = "";  // Очищаем поле ввода
-  };
-
-  // Отправка файла
-  const sendFile = () => {
-    const fileInput = document.getElementById("file-input");
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const fileData = event.target.result;
-      socketio.emit('file', { name: file.name, data: fileData });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Работа с аудио
-  const startButton = document.getElementById("startButton");
-  const stopButton = document.getElementById("stopButton");
-  let mediaRecorder;
-  let audioChunks = [];
-  let stream = null;
-
-  const initStream = async () => {
-    if (!stream) {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    }
-    return stream;
-  };
-
-  startButton.onclick = async () => {
-    audioChunks = [];
-    try {
-        await initStream();
-        mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-
-        mediaRecorder.ondataavailable = (event) => {
-            audioChunks.push(event.data);
-        };
-
-        mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            const reader = new FileReader();
-
-            reader.onload = () => {
-                // Отправка аудиофайла на сервер
-                socketio.emit("audioSMS", { name: "Audio Message", data: reader.result });
-            };
-            reader.readAsDataURL(audioBlob);
-        };
-
-        mediaRecorder.start();
-        toggleRecordingButtons(true);
-    } catch (error) {
-        console.error("Error accessing microphone:", error.message);
-    }
-};
-
-  stopButton.onclick = () => {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
-    }
-    toggleRecordingButtons(false);
-  };
-
-  function toggleRecordingButtons (isRecording) {
-    stopButton.style.display = isRecording ? "block" : "none";
-    startButton.style.display = isRecording ? "none" : "block";
-    stopButton.style.visibility = isRecording ? "visible" : "hidden";
-    startButton.style.visibility = isRecording ? "hidden" : "visible";
-  };
-
-  // Освобождение потока при закрытии вкладки
-  window.onunload = () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-    }
-  };
-
-  // Получение аудио-сообщений от сервера
-  socketio.on("audioSMS", data => {
-    createMessage(data.name, data.file, data.timestamp);
-  });
-</script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/room.js') }}"></script>
 
 {% for msg in messages %}
 <script type="text/javascript">
